@@ -34,6 +34,11 @@ public class FlickrFetcher {
 
     public byte[] getUrlBytes(String urlSpec) throws IOException {
         URL url = new URL(urlSpec);
+        /*try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }*/
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -68,7 +73,6 @@ public class FlickrFetcher {
         List<FlickrPhoto> items = new ArrayList<>();
         try {
             String jsonString = getUrlString(url);
-            Log.i(TAG, "Received JSON: " + jsonString);
             JSONObject jsonBody = new JSONObject(jsonString);
             parseItems(items, jsonBody);
         } catch (JSONException je) {
@@ -80,11 +84,11 @@ public class FlickrFetcher {
         return items;
     }
 
-    private String buildUrl(String method, String tagValue) {
+    private String buildUrl(String method, String tagValues) {
         Uri.Builder uriBuilder = ENDPOINT.buildUpon()
                 .appendQueryParameter("method", method);
         if (SEARCH_METHOD.equals(method)) {
-            uriBuilder.appendQueryParameter("tags", tagValue);
+            uriBuilder.appendQueryParameter("tags", tagValues);
         }
         return uriBuilder.build().toString();
     }
@@ -93,7 +97,6 @@ public class FlickrFetcher {
     private void parseItems(List<FlickrPhoto> items, JSONObject jsonBody)
             throws IOException, JSONException {
         JSONObject photosJsonObject = jsonBody.getJSONObject("photos");
-        Log.i(TAG, "JSON BODY : " + jsonBody);
         JSONArray photoJsonArray = photosJsonObject.getJSONArray("photo");
         for (int i = 0; i < photoJsonArray.length(); i++) {
             JSONObject photoJsonObject = photoJsonArray.getJSONObject(i);

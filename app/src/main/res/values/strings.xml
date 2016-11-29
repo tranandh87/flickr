@@ -1,3 +1,13 @@
 <resources>
-    <string name="app_name">Flickr</string>
+    <string name="app_name">FlickrPhotos</string>
+    <string name="progess_title_api">Fetching Flick API</string>
+    <string name="progess_title_image">Dowloading Image</string>
+    <string name="progess_message_api">Tag contains: %1$s</string>
+    <string name="progess_message_image">url: %1$s</string>
+    <string name="no_network_message">No internet connection</string>
+    <string name="network_error">Network Error</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="no_title">NO TITLE</string>
+
 </resources>

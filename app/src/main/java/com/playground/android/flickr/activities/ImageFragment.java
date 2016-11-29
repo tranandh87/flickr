@@ -1,16 +1,18 @@
 package com.playground.android.flickr.activities;
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
+import android.support.v4.util.LruCache;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -30,19 +32,23 @@ import java.util.List;
 public class ImageFragment extends Fragment implements View.OnClickListener {
 
     private static final String TAG = "ImageFragment";
-    private static final String SEARCH_TAG = "pie";
+    private static final String SEARCH_TAG = "cat";
     public static final int LOADER_ID = 0;
     public static final int API_RESULT_COUNT = 100;
-    private static int position = 0;
+    private static final String KEY_POSITION = "key_position";
+    private int position = 0;
 
     // Views
     ImageButton image;
     TextView title;
+    ProgressDialog progressDialog;
 
     private boolean isLandScape;
     private List<FlickrPhoto> flickrPhotos;
 
     private ImageDownloader<ImageButton> imageDownloader;
+
+    LruCache<String, Bitmap> memoryCache;
 
     public static ImageFragment newInstance() {
         return new ImageFragment();
@@ -55,30 +61,41 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
 
         Handler responseHandler = new Handler();
 
-        imageDownloader = new ImageDownloader<>(responseHandler);
+        imageDownloader = new ImageDownloader<>(responseHandler, memoryCache);
 
         imageDownloader.setImageDownloadListener(
                 new ImageDownloader.ImageDownloadListener<ImageButton>() {
                     @Override
-                    public void onImageDownloaded(ImageButton imageButton, Bitmap bitmap) {
-                        Drawable drawable = new BitmapDrawable(getResources(), bitmap);
-                        imageButton.setImageDrawable(drawable);
+                    public void onImageDownloaded(ImageButton imageButton, Bitmap bitmap)
+                    {
+                        setImageButtonResource(imageButton, bitmap);
+                    }
+
+
+                    @Override
+                    public void onCachedImage(ImageButton imageButton, Bitmap bitmap)
+                    {
+                        setImageButtonResource(imageButton, bitmap);
+                    }
+
+                    private void setImageButtonResource(ImageButton imageButton, Bitmap bitmap) {
+                        if (isAdded())
+                        {
+                            Drawable drawable = new BitmapDrawable(getResources(), bitmap);
+                            imageButton.setImageDrawable(drawable);
+                            stopProgress();
+                        }
                     }
                 } );
+
+        if (savedInstanceState != null)
+            position = savedInstanceState.getInt(KEY_POSITION, 0);
 
         imageDownloader.start();
         imageDownloader.getLooper();
         Log.i(TAG, "Background thread started");
 
         initLoader();
-    }
-
-    private void initLoader() {
-        getLoaderManager().initLoader(LOADER_ID, null, new FlickrPhotoLoaderListener(SEARCH_TAG));
-    }
-
-    private void restartLoader() {
-        getLoaderManager().restartLoader(LOADER_ID, null, new FlickrPhotoLoaderListener(SEARCH_TAG));
     }
 
     @Override
@@ -94,15 +111,14 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
         if (isLandScape)
         {
             LinearLayout imageContainer = (LinearLayout) v.findViewById(R.id.imageContainer);
-
-            LinearLayout.LayoutParams layoutParams;
             imageContainer.setOrientation(LinearLayout.HORIZONTAL);
 
-            /*int height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_PX, 200,
-                    getResources().getDisplayMetrics());*/
+            LinearLayout.LayoutParams layoutParams;
+
             int width = 300;
             int height = 200;
-            layoutParams = new LinearLayout.LayoutParams(0, height * 2, 1f);
+            layoutParams = new LinearLayout.LayoutParams(0, height*2, 1f);
+            layoutParams.setMargins(100, 0, 0, 0);
             image.setLayoutParams(layoutParams);
 
             layoutParams = new LinearLayout.LayoutParams(width, height, 1f);
@@ -110,6 +126,18 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
 
         }
         return v;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+        savedInstanceState.putInt(KEY_POSITION, position);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        stopProgress();
     }
 
     @Override
@@ -123,18 +151,44 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
         super.onDestroy();
         imageDownloader.quit();
         Log.i(TAG, "Background thread destroyed");
+        progressDialog = null;
+    }
+
+    private void initLoader() {
+        getLoaderManager().initLoader(LOADER_ID, null, new FlickrPhotoLoaderListener(SEARCH_TAG));
+    }
+
+    private void restartLoader() {
+        getLoaderManager().restartLoader(LOADER_ID, null, new FlickrPhotoLoaderListener(SEARCH_TAG));
     }
 
     private void renderScreen(List<FlickrPhoto> photos)
     {
+        stopProgress();
         Log.i(TAG, "Current position = " + position);
-        for (FlickrPhoto photo : photos) {
-            Log.i(TAG, photo.getTitle());
-            Log.i(TAG, photo.getUrl_s());
+
+        if (photos.size() > position) {
+            FlickrPhoto currentPhoto = photos.get(position);
+            if (currentPhoto != null) {
+                if (imageDownloader.memoryCache ==  null)
+                    tryToSetImageDownloaderMemCache(getActivity().getSupportFragmentManager());
+
+                showProgress(getString(R.string.progess_title_image), getString(
+                        R.string.progess_message_image, currentPhoto.getUrl_s()));
+                imageDownloader.queueThumbnail(image, currentPhoto.getUrl_s());
+                String title = currentPhoto.getTitle();
+                this.title.setText(TextUtils.isEmpty(title) ? getString(R.string.no_title) : title);
+                Log.i(TAG, "Title : " + title);
+                Log.i(TAG, "URL : " + currentPhoto.getUrl_s());
+            }
         }
-        FlickrPhoto currentPhoto = photos.get(position);
-        imageDownloader.queueThumbnail(image, currentPhoto.getUrl_s());
-        title.setText(currentPhoto.getTitle());
+    }
+
+    private void tryToSetImageDownloaderMemCache(FragmentManager supportFragmentManager) {
+        RetainFragment retainFragment =
+                RetainFragment.findOrCreateRetainFragment(supportFragmentManager);
+        if (imageDownloader != null && retainFragment != null)
+            imageDownloader.memoryCache = retainFragment.retainedCache;
     }
 
     private void renderScreen()
@@ -161,17 +215,37 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
         }
     }
 
+    public void showProgress(String title, String message)
+    {
+        if (progressDialog != null)
+            stopProgress();
+
+        progressDialog = ProgressDialog.show(getActivity(), title, message);
+    }
+
+    private void stopProgress() {
+        if (progressDialog != null) {
+            progressDialog.dismiss();
+            progressDialog = null;
+        }
+    }
+
     //Class for Implementing flickr photo loader (FlickPhotoLoader) call back methods
-    private class FlickrPhotoLoaderListener implements LoaderManager.LoaderCallbacks<List<FlickrPhoto>> {
+    private class FlickrPhotoLoaderListener implements LoaderManager.LoaderCallbacks<List<FlickrPhoto>>
+    {
         String tagValues = null;
 
-        public FlickrPhotoLoaderListener(String tagValues) {
+        FlickrPhotoLoaderListener(String tagValues)
+        {
             this.tagValues = tagValues;
         }
 
         @Override
-        public Loader<List<FlickrPhoto>> onCreateLoader(int id, Bundle args) {
+        public Loader<List<FlickrPhoto>> onCreateLoader(int id, Bundle args)
+        {
             // This is called when a new Loader needs to be created.
+            showProgress(getString(R.string.progess_title_api),
+                    getString(R.string.progess_message_api, SEARCH_TAG));
             Log.i(TAG, "On Create Loader");
             return new FlickrPhotoTaskLoader(getActivity(), tagValues);
         }
@@ -180,7 +254,6 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
         public void onLoadFinished(Loader<List<FlickrPhoto>> loader, List<FlickrPhoto> photos) {
             Log.i(TAG, "On Loader Finished");
             if (photos != null) {
-//                currentWeatherProgressBar.setVisibility(View.GONE);
                 flickrPhotos = photos;
                 renderScreen(photos);
             }
@@ -196,10 +269,9 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
     private static class FlickrPhotoTaskLoader extends AsyncTaskLoader<List<FlickrPhoto>> {
 
         List<FlickrPhoto> flickrPhotos;
-        Location mLocation;
         String tagValues;
 
-        public FlickrPhotoTaskLoader(Context context, String tagValues) {
+        FlickrPhotoTaskLoader(Context context, String tagValues) {
             super(context);
             this.tagValues = tagValues;
 
@@ -229,11 +301,6 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
         @Override
         public void deliverResult(List<FlickrPhoto> photos) {
             Log.i(TAG, "On Loader delivering result");
-            /*if (isReset()) {
-                if (flickrPhotos != null) {
-                    onReleaseResources(flickrPhotos);
-                }
-            }*/
             flickrPhotos = photos;
 
             if (isStarted()) {
@@ -251,8 +318,6 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
         public void onCanceled(List<FlickrPhoto> photos) {
             Log.i(TAG, "On Loader Cancelled");
             super.onCanceled(photos);
-
-//            onReleaseResources(weatherForecastReports);
         }
 
         @Override
@@ -263,14 +328,8 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
             onStopLoading();
 
             if (flickrPhotos != null) {
-//                onReleaseResources(mWeatherForecastReportList);
                 flickrPhotos = null;
             }
         }
-
-        /*protected void onReleaseResources(List<WeatherForecastReport> weatherForecastReports) {
-            Log.i(TAG, "WeatherForecastTaskLoader: On Loader Released");
-        }*/
     }
-
 }

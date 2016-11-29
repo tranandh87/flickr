@@ -6,6 +6,10 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.util.LruCache;
 
+/**
+ * This class is just to hold the memory cache mainly for configuration changes and hence setting
+ * its {@link super#setRetainInstance} to true. No UI is performed using in this fragment
+  */
 public class RetainFragment extends Fragment {
     private static final String TAG = "RetainFragment";
     public LruCache<String, Bitmap> retainedCache;

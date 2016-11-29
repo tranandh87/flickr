@@ -126,6 +126,7 @@ public class ImageDownloader<T> extends HandlerThread {
         return null;
     }
 
+    // Asynch task to add bitmap to memory cache in background thread
     private class BitmapMemoryCacheWorkerTask extends AsyncTask<String, Void, Bitmap> {
         Bitmap bitMap;
 

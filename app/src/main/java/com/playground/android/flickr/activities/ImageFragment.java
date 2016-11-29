@@ -63,33 +63,13 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
 
         imageDownloader = new ImageDownloader<>(responseHandler, memoryCache);
 
-        imageDownloader.setImageDownloadListener(
-                new ImageDownloader.ImageDownloadListener<ImageButton>() {
-                    @Override
-                    public void onImageDownloaded(ImageButton imageButton, Bitmap bitmap) {
-                        setImageButtonResource(imageButton, bitmap);
-                    }
-
-
-                    @Override
-                    public void onCachedImage(ImageButton imageButton, Bitmap bitmap) {
-                        setImageButtonResource(imageButton, bitmap);
-                    }
-
-                    private void setImageButtonResource(ImageButton imageButton, Bitmap bitmap) {
-                        if (isAdded()) {
-                            Drawable drawable = new BitmapDrawable(getResources(), bitmap);
-                            imageButton.setImageDrawable(drawable);
-                            stopProgress();
-                        }
-                    }
-                });
+        imageDownloader.setImageDownloadListener(new BitMapImageLoaderListener());
+        imageDownloader.start();
+        imageDownloader.getLooper();
 
         if (savedInstanceState != null)
             position = savedInstanceState.getInt(KEY_POSITION, 0);
 
-        imageDownloader.start();
-        imageDownloader.getLooper();
         Log.i(TAG, "Background thread started");
 
         initLoader();
@@ -104,23 +84,32 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
         image.setImageResource(android.R.drawable.sym_def_app_icon);
         title = ((TextView) v.findViewById(R.id.imageTitle));
 
-        if (isLandScape) {
-            LinearLayout imageContainer = (LinearLayout) v.findViewById(R.id.imageContainer);
-            imageContainer.setOrientation(LinearLayout.HORIZONTAL);
+        if (isLandScape)
+            customizeUIForlandscape(v);
 
-            LinearLayout.LayoutParams layoutParams;
-
-            int width = 300;
-            int height = 200;
-            layoutParams = new LinearLayout.LayoutParams(0, height * 2, 1f);
-            layoutParams.setMargins(100, 0, 0, 0);
-            image.setLayoutParams(layoutParams);
-
-            layoutParams = new LinearLayout.LayoutParams(width, height, 1f);
-            title.setLayoutParams(layoutParams);
-
-        }
         return v;
+    }
+
+    /**
+     * In landscape programmatically change LinearLayout orientation to Horizontal and adjust
+     * view layout params.
+     * This is done to avoid having another layout file for landscape orientation
+     * since we are just dealing with two view in here
+     */
+    private void customizeUIForlandscape(View v) {
+        LinearLayout imageContainer = (LinearLayout) v.findViewById(R.id.imageContainer);
+        imageContainer.setOrientation(LinearLayout.HORIZONTAL);
+
+        LinearLayout.LayoutParams layoutParams;
+
+        int width = 300;
+        int height = 200;
+        layoutParams = new LinearLayout.LayoutParams(width, height * 3, 1f);
+        layoutParams.setMargins(100, 0, 0, 0);
+        image.setLayoutParams(layoutParams);
+
+        layoutParams = new LinearLayout.LayoutParams(width, height, 1f);
+        title.setLayoutParams(layoutParams);
     }
 
     @Override
@@ -167,9 +156,14 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
                 if (imageDownloader.memoryCache == null)
                     tryToSetImageDownloaderMemCache(getActivity().getSupportFragmentManager());
 
-                showProgress(getString(R.string.progess_title_image), getString(
-                        R.string.progess_message_image, currentPhoto.getUrl_s()));
-                imageDownloader.queueThumbnail(image, currentPhoto.getUrl_s());
+                if (currentPhoto.getUrl_s() != null) {
+                    showProgress(getString(R.string.progess_title_image), getString(
+                            R.string.progess_message_image, currentPhoto.getUrl_s()));
+                    imageDownloader.queueThumbnail(image, currentPhoto.getUrl_s());
+                }
+                else
+                    image.setImageResource(android.R.drawable.sym_def_app_icon);
+
                 String title = currentPhoto.getTitle();
                 this.title.setText(TextUtils.isEmpty(title) ? getString(R.string.no_title) : title);
                 Log.i(TAG, "Title : " + title);
@@ -178,6 +172,7 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
         }
     }
 
+    // Set ImageDownloader memory cache from Retain Fragment retained cache
     private void tryToSetImageDownloaderMemCache(FragmentManager supportFragmentManager) {
         RetainFragment retainFragment =
                 RetainFragment.findOrCreateRetainFragment(supportFragmentManager);
@@ -315,6 +310,27 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
 
             if (flickrPhotos != null) {
                 flickrPhotos = null;
+            }
+        }
+    }
+
+    // Listener class for implementing ImageLoader interface to receive call back
+    private class BitMapImageLoaderListener implements ImageDownloader.ImageDownloadListener<ImageButton>{
+        @Override
+        public void onImageDownloaded(ImageButton imageButton, Bitmap bitmap) {
+            setImageButtonResource(imageButton, bitmap);
+        }
+
+        @Override
+        public void onCachedImage(ImageButton imageButton, Bitmap bitmap) {
+            setImageButtonResource(imageButton, bitmap);
+        }
+
+        private void setImageButtonResource(ImageButton imageButton, Bitmap bitmap) {
+            if (isAdded()) {
+                Drawable drawable = new BitmapDrawable(getResources(), bitmap);
+                imageButton.setImageDrawable(drawable);
+                stopProgress();
             }
         }
     }

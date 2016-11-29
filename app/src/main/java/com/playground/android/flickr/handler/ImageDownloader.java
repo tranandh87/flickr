@@ -57,7 +57,7 @@ public class ImageDownloader<T> extends HandlerThread {
         };
     }
 
-    public void queueThumbnail(T target, String url) {
+    public void queueRequest(T target, String url) {
         Log.i(TAG, "Got a URL: " + url);
 
         if (url == null) {

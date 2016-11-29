@@ -159,7 +159,7 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
                 if (currentImage.getUrl_s() != null) {
                     showProgress(getString(R.string.progess_title_image), getString(
                             R.string.progess_message_image, currentImage.getUrl_s()));
-                    imageDownloader.queueThumbnail(image, currentImage.getUrl_s());
+                    imageDownloader.queueRequest(image, currentImage.getUrl_s());
                 }
                 else
                     image.setImageResource(android.R.drawable.sym_def_app_icon);

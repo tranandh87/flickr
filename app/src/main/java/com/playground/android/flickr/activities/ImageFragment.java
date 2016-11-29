@@ -66,27 +66,24 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
         imageDownloader.setImageDownloadListener(
                 new ImageDownloader.ImageDownloadListener<ImageButton>() {
                     @Override
-                    public void onImageDownloaded(ImageButton imageButton, Bitmap bitmap)
-                    {
+                    public void onImageDownloaded(ImageButton imageButton, Bitmap bitmap) {
                         setImageButtonResource(imageButton, bitmap);
                     }
 
 
                     @Override
-                    public void onCachedImage(ImageButton imageButton, Bitmap bitmap)
-                    {
+                    public void onCachedImage(ImageButton imageButton, Bitmap bitmap) {
                         setImageButtonResource(imageButton, bitmap);
                     }
 
                     private void setImageButtonResource(ImageButton imageButton, Bitmap bitmap) {
-                        if (isAdded())
-                        {
+                        if (isAdded()) {
                             Drawable drawable = new BitmapDrawable(getResources(), bitmap);
                             imageButton.setImageDrawable(drawable);
                             stopProgress();
                         }
                     }
-                } );
+                });
 
         if (savedInstanceState != null)
             position = savedInstanceState.getInt(KEY_POSITION, 0);
@@ -100,16 +97,14 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState)
-    {
+                             Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_image, container, false);
-        image = (ImageButton)v.findViewById(R.id.imageButton);
+        image = (ImageButton) v.findViewById(R.id.imageButton);
         image.setOnClickListener(this);
         image.setImageResource(android.R.drawable.sym_def_app_icon);
-        title = ((TextView)v.findViewById(R.id.imageTitle));
+        title = ((TextView) v.findViewById(R.id.imageTitle));
 
-        if (isLandScape)
-        {
+        if (isLandScape) {
             LinearLayout imageContainer = (LinearLayout) v.findViewById(R.id.imageContainer);
             imageContainer.setOrientation(LinearLayout.HORIZONTAL);
 
@@ -117,7 +112,7 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
 
             int width = 300;
             int height = 200;
-            layoutParams = new LinearLayout.LayoutParams(0, height*2, 1f);
+            layoutParams = new LinearLayout.LayoutParams(0, height * 2, 1f);
             layoutParams.setMargins(100, 0, 0, 0);
             image.setLayoutParams(layoutParams);
 
@@ -162,15 +157,14 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
         getLoaderManager().restartLoader(LOADER_ID, null, new FlickrPhotoLoaderListener(SEARCH_TAG));
     }
 
-    private void renderScreen(List<FlickrPhoto> photos)
-    {
+    private void renderScreen(List<FlickrPhoto> photos) {
         stopProgress();
         Log.i(TAG, "Current position = " + position);
 
         if (photos.size() > position) {
             FlickrPhoto currentPhoto = photos.get(position);
             if (currentPhoto != null) {
-                if (imageDownloader.memoryCache ==  null)
+                if (imageDownloader.memoryCache == null)
                     tryToSetImageDownloaderMemCache(getActivity().getSupportFragmentManager());
 
                 showProgress(getString(R.string.progess_title_image), getString(
@@ -191,32 +185,27 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
             imageDownloader.memoryCache = retainFragment.retainedCache;
     }
 
-    private void renderScreen()
-    {
+    private void renderScreen() {
         if (flickrPhotos != null)
             renderScreen(flickrPhotos);
     }
 
     @Override
-    public void onClick(View v)
-    {
+    public void onClick(View v) {
         final int id = v.getId();
         switch (id) {
             case R.id.imageButton:
-                if (position >= API_RESULT_COUNT - 1)
-                {
+                if (position >= API_RESULT_COUNT - 1) {
                     restartLoader();
                     position = 0;
-                }
-                else
+                } else
                     position++;
 
                 renderScreen();
         }
     }
 
-    public void showProgress(String title, String message)
-    {
+    public void showProgress(String title, String message) {
         if (progressDialog != null)
             stopProgress();
 
@@ -231,18 +220,15 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
     }
 
     //Class for Implementing flickr photo loader (FlickPhotoLoader) call back methods
-    private class FlickrPhotoLoaderListener implements LoaderManager.LoaderCallbacks<List<FlickrPhoto>>
-    {
+    private class FlickrPhotoLoaderListener implements LoaderManager.LoaderCallbacks<List<FlickrPhoto>> {
         String tagValues = null;
 
-        FlickrPhotoLoaderListener(String tagValues)
-        {
+        FlickrPhotoLoaderListener(String tagValues) {
             this.tagValues = tagValues;
         }
 
         @Override
-        public Loader<List<FlickrPhoto>> onCreateLoader(int id, Bundle args)
-        {
+        public Loader<List<FlickrPhoto>> onCreateLoader(int id, Bundle args) {
             // This is called when a new Loader needs to be created.
             showProgress(getString(R.string.progess_title_api),
                     getString(R.string.progess_message_api, SEARCH_TAG));

@@ -29,6 +29,7 @@ public class ImageDownloader<T> extends HandlerThread {
 
     public interface ImageDownloadListener<T> {
         void onImageDownloaded(T target, Bitmap thumbnail);
+
         void onCachedImage(T target, Bitmap thumbnail);
     }
 
@@ -87,8 +88,7 @@ public class ImageDownloader<T> extends HandlerThread {
                         imageDownloadListener.onCachedImage(target, bitmapFromMemCache);
                     }
                 });
-            }
-            else {
+            } else {
                 byte[] bitmapBytes = new FlickrFetcher().getUrlBytes(url);
                 final Bitmap bitmap = BitmapFactory
                         .decodeByteArray(bitmapBytes, 0, bitmapBytes.length);

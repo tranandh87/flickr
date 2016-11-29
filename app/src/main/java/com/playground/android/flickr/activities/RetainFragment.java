@@ -10,7 +10,8 @@ public class RetainFragment extends Fragment {
     private static final String TAG = "RetainFragment";
     public LruCache<String, Bitmap> retainedCache;
 
-    public RetainFragment() {}
+    public RetainFragment() {
+    }
 
     public static RetainFragment findOrCreateRetainFragment(FragmentManager fm) {
         RetainFragment fragment = (RetainFragment) fm.findFragmentByTag(TAG);

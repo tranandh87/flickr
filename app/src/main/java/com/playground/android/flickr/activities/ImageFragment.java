@@ -24,7 +24,7 @@ import android.widget.TextView;
 
 import com.playground.android.flickr.R;
 import com.playground.android.flickr.handler.ImageDownloader;
-import com.playground.android.flickr.model.FlickrPhoto;
+import com.playground.android.flickr.model.FlickrImage;
 import com.playground.android.flickr.network.FlickrFetcher;
 
 import java.util.List;
@@ -44,7 +44,7 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
     ProgressDialog progressDialog;
 
     private boolean isLandScape;
-    private List<FlickrPhoto> flickrPhotos;
+    private List<FlickrImage> mFlickrImages;
 
     private ImageDownloader<ImageButton> imageDownloader;
 
@@ -139,35 +139,35 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
     }
 
     private void initLoader() {
-        getLoaderManager().initLoader(LOADER_ID, null, new FlickrPhotoLoaderListener(SEARCH_TAG));
+        getLoaderManager().initLoader(LOADER_ID, null, new FlickrImageLoaderListener(SEARCH_TAG));
     }
 
     private void restartLoader() {
-        getLoaderManager().restartLoader(LOADER_ID, null, new FlickrPhotoLoaderListener(SEARCH_TAG));
+        getLoaderManager().restartLoader(LOADER_ID, null, new FlickrImageLoaderListener(SEARCH_TAG));
     }
 
-    private void renderScreen(List<FlickrPhoto> photos) {
+    private void renderScreen(List<FlickrImage> images) {
         stopProgress();
         Log.i(TAG, "Current position = " + position);
 
-        if (photos.size() > position) {
-            FlickrPhoto currentPhoto = photos.get(position);
-            if (currentPhoto != null) {
+        if (images.size() > position) {
+            FlickrImage currentImage = images.get(position);
+            if (currentImage != null) {
                 if (imageDownloader.memoryCache == null)
                     tryToSetImageDownloaderMemCache(getActivity().getSupportFragmentManager());
 
-                if (currentPhoto.getUrl_s() != null) {
+                if (currentImage.getUrl_s() != null) {
                     showProgress(getString(R.string.progess_title_image), getString(
-                            R.string.progess_message_image, currentPhoto.getUrl_s()));
-                    imageDownloader.queueThumbnail(image, currentPhoto.getUrl_s());
+                            R.string.progess_message_image, currentImage.getUrl_s()));
+                    imageDownloader.queueThumbnail(image, currentImage.getUrl_s());
                 }
                 else
                     image.setImageResource(android.R.drawable.sym_def_app_icon);
 
-                String title = currentPhoto.getTitle();
+                String title = currentImage.getTitle();
                 this.title.setText(TextUtils.isEmpty(title) ? getString(R.string.no_title) : title);
                 Log.i(TAG, "Title : " + title);
-                Log.i(TAG, "URL : " + currentPhoto.getUrl_s());
+                Log.i(TAG, "URL : " + currentImage.getUrl_s());
             }
         }
     }
@@ -181,8 +181,8 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
     }
 
     private void renderScreen() {
-        if (flickrPhotos != null)
-            renderScreen(flickrPhotos);
+        if (mFlickrImages != null)
+            renderScreen(mFlickrImages);
     }
 
     @Override
@@ -214,45 +214,45 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
         }
     }
 
-    //Class for Implementing flickr photo loader (FlickPhotoLoader) call back methods
-    private class FlickrPhotoLoaderListener implements LoaderManager.LoaderCallbacks<List<FlickrPhoto>> {
+    //Class for Implementing flickr image loader (FlickImageLoader) call back methods
+    private class FlickrImageLoaderListener implements LoaderManager.LoaderCallbacks<List<FlickrImage>> {
         String tagValues = null;
 
-        FlickrPhotoLoaderListener(String tagValues) {
+        FlickrImageLoaderListener(String tagValues) {
             this.tagValues = tagValues;
         }
 
         @Override
-        public Loader<List<FlickrPhoto>> onCreateLoader(int id, Bundle args) {
+        public Loader<List<FlickrImage>> onCreateLoader(int id, Bundle args) {
             // This is called when a new Loader needs to be created.
             showProgress(getString(R.string.progess_title_api),
                     getString(R.string.progess_message_api, SEARCH_TAG));
             Log.i(TAG, "On Create Loader");
-            return new FlickrPhotoTaskLoader(getActivity(), tagValues);
+            return new FlickrImageTaskLoader(getActivity(), tagValues);
         }
 
         @Override
-        public void onLoadFinished(Loader<List<FlickrPhoto>> loader, List<FlickrPhoto> photos) {
+        public void onLoadFinished(Loader<List<FlickrImage>> loader, List<FlickrImage> images) {
             Log.i(TAG, "On Loader Finished");
-            if (photos != null) {
-                flickrPhotos = photos;
-                renderScreen(photos);
+            if (images != null) {
+                mFlickrImages = images;
+                renderScreen(images);
             }
         }
 
         @Override
-        public void onLoaderReset(Loader<List<FlickrPhoto>> loader) {
+        public void onLoaderReset(Loader<List<FlickrImage>> loader) {
             Log.i(TAG, " On Loader Reset");
         }
     }
 
-    //Async Loader for getting flickr photos
-    private static class FlickrPhotoTaskLoader extends AsyncTaskLoader<List<FlickrPhoto>> {
+    //Async Loader for getting flickr images
+    private static class FlickrImageTaskLoader extends AsyncTaskLoader<List<FlickrImage>> {
 
-        List<FlickrPhoto> flickrPhotos;
+        List<FlickrImage> mFlickrImages;
         String tagValues;
 
-        FlickrPhotoTaskLoader(Context context, String tagValues) {
+        FlickrImageTaskLoader(Context context, String tagValues) {
             super(context);
             this.tagValues = tagValues;
 
@@ -260,32 +260,32 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
         }
 
         @Override
-        public List<FlickrPhoto> loadInBackground() {
+        public List<FlickrImage> loadInBackground() {
             Log.i(TAG, "Starting loader background thread");
             if (!TextUtils.isEmpty(tagValues))
-                return new FlickrFetcher().searchPhotosByTags(ImageFragment.SEARCH_TAG);
+                return new FlickrFetcher().searchImagesByTags(ImageFragment.SEARCH_TAG);
             return null;
         }
 
         @Override
         protected void onStartLoading() {
             Log.i(TAG, "On start Loading");
-            if (flickrPhotos != null) {
-                deliverResult(flickrPhotos);
+            if (mFlickrImages != null) {
+                deliverResult(mFlickrImages);
             }
 
-            if (takeContentChanged() || flickrPhotos == null) {
+            if (takeContentChanged() || mFlickrImages == null) {
                 forceLoad();
             }
         }
 
         @Override
-        public void deliverResult(List<FlickrPhoto> photos) {
+        public void deliverResult(List<FlickrImage> images) {
             Log.i(TAG, "On Loader delivering result");
-            flickrPhotos = photos;
+            mFlickrImages = images;
 
             if (isStarted()) {
-                super.deliverResult(photos);
+                super.deliverResult(images);
             }
         }
 
@@ -296,9 +296,9 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
         }
 
         @Override
-        public void onCanceled(List<FlickrPhoto> photos) {
+        public void onCanceled(List<FlickrImage> images) {
             Log.i(TAG, "On Loader Cancelled");
-            super.onCanceled(photos);
+            super.onCanceled(images);
         }
 
         @Override
@@ -308,8 +308,8 @@ public class ImageFragment extends Fragment implements View.OnClickListener {
 
             onStopLoading();
 
-            if (flickrPhotos != null) {
-                flickrPhotos = null;
+            if (mFlickrImages != null) {
+                mFlickrImages = null;
             }
         }
     }

@@ -4,7 +4,7 @@ import android.net.Uri;
 import android.util.Log;
 
 import com.google.gson.Gson;
-import com.playground.android.flickr.model.FlickrPhoto;
+import com.playground.android.flickr.model.FlickrImage;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -63,14 +63,14 @@ public class FlickrFetcher {
         return new String(getUrlBytes(urlSpec));
     }
 
-    public List<FlickrPhoto> searchPhotosByTags(String tagValues) {
+    public List<FlickrImage> searchImagesByTags(String tagValues) {
         String url = buildUrl(SEARCH_METHOD, tagValues);
         return downloadGalleryItems(url);
     }
 
-    private List<FlickrPhoto> downloadGalleryItems(String url) {
+    private List<FlickrImage> downloadGalleryItems(String url) {
 
-        List<FlickrPhoto> items = new ArrayList<>();
+        List<FlickrImage> items = new ArrayList<>();
         try {
             String jsonString = getUrlString(url);
             JSONObject jsonBody = new JSONObject(jsonString);
@@ -94,14 +94,14 @@ public class FlickrFetcher {
     }
 
 
-    private void parseItems(List<FlickrPhoto> items, JSONObject jsonBody)
+    private void parseItems(List<FlickrImage> items, JSONObject jsonBody)
             throws IOException, JSONException {
         JSONObject photosJsonObject = jsonBody.getJSONObject("photos");
         JSONArray photoJsonArray = photosJsonObject.getJSONArray("photo");
         for (int i = 0; i < photoJsonArray.length(); i++) {
             JSONObject photoJsonObject = photoJsonArray.getJSONObject(i);
             Gson gson = new Gson();
-            FlickrPhoto item = gson.fromJson(photoJsonObject.toString(), FlickrPhoto.class);
+            FlickrImage item = gson.fromJson(photoJsonObject.toString(), FlickrImage.class);
             items.add(item);
         }
     }

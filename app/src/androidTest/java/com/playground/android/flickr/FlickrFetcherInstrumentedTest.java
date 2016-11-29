@@ -5,7 +5,7 @@ import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 import android.text.TextUtils;
 
-import com.playground.android.flickr.model.FlickrPhoto;
+import com.playground.android.flickr.model.FlickrImage;
 import com.playground.android.flickr.network.FlickrFetcher;
 
 import org.junit.Before;
@@ -46,12 +46,12 @@ public class FlickrFetcherInstrumentedTest {
      */
     @Test
     public void testFlickrFetcher() {
-        List<FlickrPhoto> flickrPhotos = flickrFetcher.searchPhotosByTags("cat");
-        assertEquals(flickrPhotos.size(), 100);
-        for (FlickrPhoto flickrPhoto : flickrPhotos) {
-            assertNotNull(flickrPhoto);
+        List<FlickrImage> flickrImages = flickrFetcher.searchImagesByTags("cat");
+        assertEquals(flickrImages.size(), 100);
+        for (FlickrImage flickrImage : flickrImages) {
+            assertNotNull(flickrImage);
             assertThat("Checking whether photo has id associated with it",
-                    !TextUtils.isEmpty(flickrPhoto.getId()), is(true));
+                    !TextUtils.isEmpty(flickrImage.getId()), is(true));
         }
     }
 }

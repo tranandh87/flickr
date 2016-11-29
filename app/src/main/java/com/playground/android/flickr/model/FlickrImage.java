@@ -3,7 +3,7 @@ package com.playground.android.flickr.model;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-public class FlickrPhoto {
+public class FlickrImage {
 
     @Expose
     private Integer isfamily;

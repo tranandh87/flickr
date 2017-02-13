@@ -65,7 +65,7 @@ public class ImageActivity extends SingleFragmentActivity {
                 .setCancelable(false)
                 .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
                     public void onClick(@SuppressWarnings("unused") final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
-                        startActivity(new Intent(Settings.ACTION_DISPLAY_SETTINGS));
+                        startActivity(new Intent(Settings.ACTION_SETTINGS));
                     }
                 })
                 .setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {

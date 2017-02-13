@@ -9,8 +9,8 @@ Use Gradle to build the project
 
 ##High level algorithm:
 
-1. When app launches 1. Loader is initialized and hence AsynchLoader (FlickrImageTaskLoader) calls
-flick search api (using tag="cat") 2. Dedicated background HandlerThread (ImageDownloader -
+1. When app launches, a. Loader is initialized and hence AsynchLoader (FlickrImageTaskLoader) calls
+flick search api (using tag="cat") b. Dedicated background HandlerThread (ImageDownloader -
 BitMap image loader which uses LRU memory cache to cache downloaded bitmap) is created.
 While rending UI, image title is updated and first image is downloaded using ImageDownloader.
 Progress dialog is shown separately for search api and image download

@@ -39,7 +39,6 @@ TextView) orientation to Horizontal and adjusting views layout params. This is d
 another layout file for landscape orientation since we are just dealing with two view in here
 
 4. Implemented both Espresso test for UI automation and instrument test
-Would like to mention about libraries used and not used
 
 5. Used basic libraries like appcompat, gson, junit and espresso. I have not used any other libraries
 like ButterKnife, Volley and image loading library like Picasso etc to accomplish this task for this

@@ -1,6 +1,9 @@
 FlickrImageFetcher Android App
+
 Simple flickr image fetching app
+
 Project MinSdkVersion is 16
+
 Run and build instruction:
 Use Gradle to build the project
 
